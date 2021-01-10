@@ -1,0 +1,131 @@
+.brownBox{
+    background: brown;
+}
+.whiteBox{
+    background: white;
+}
+.box{
+    display:flex;
+    align-items: center;
+    align-content: center;
+    justify-content: center;
+}
+.board{
+    width:550px;
+    height:550px;
+    margin: 30px auto;
+    display: grid;
+    outline: 20px solid black;
+    grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+}
+*{
+    box-sizing: border-box;
+}
+.checker{
+    border-radius: 50%;
+    z-index: 1;
+    width:85%;
+    height:85%;
+    margin:3px auto;
+}
+.markedChecker{
+    width:98%;
+    height:98%;
+    outline:yellow 1px solid;
+    margin:0px auto;
+}
+.black{
+    background: black;
+}
+.white{
+    background: white;
+}
+.text{
+    font-size: 2rem;
+}
+.start{
+    width:100px;
+    height:20px;
+}
+.header{
+    margin:20px auto;
+    background:yellow;
+    width:380px;
+    text-align: center;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+}
+.queen{
+    font-size: 2.5rem;
+    overflow-wrap:normal;
+    color: gold;
+    text-align: center;
+}
+.scoreboard{
+    display:flex;
+    width:500px;
+    margin: 0px auto;
+    text-align: center;
+    font-size: 1rem;
+    outline: blue solid 1px;
+    padding:7px;
+    color: indigo;
+    font-weight: bold;
+    font-family: fantasy;
+    background: khaki;
+}
+.burntChecker{
+    font-size: 1.8rem;
+    color:rgb(178, 176, 34);
+    text-align: center;
+}
+.skipButton{
+    width:100px;
+    background: greenyellow;
+    height:40px;
+}
+.marked{
+    border: 3px solid green;
+}
+.centered-form {
+    background: #333744;
+    width: 100vw;
+    height: 100vh;   
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.centered-form__box {
+    box-shadow: 0px 0px 17px 1px #1D1F26;
+    background: #F7F7FA;
+    padding: 24px;
+    width: 250px;
+}
+.centered-form button {
+    width: 100%;
+}
+.centered-form input {
+    margin-bottom: 16px;
+    width: 100%;
+}
+.room-title {
+    font-weight: 400;
+    font-size: 22px;
+    background: #2c2f3a;
+    padding: 24px;   
+}
+.rooms {
+    list-style-type: none;
+    font-weight: 300;
+    padding: 12px 24px 0 24px;
+}
+.lobby {
+    display: flex;
+}
+.lobby__sidebar {
+    height: 95vh;
+    color: white;
+    background: #8badcef3;
+    width: 225px;
+    overflow-y: scroll
+}
