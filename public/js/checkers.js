@@ -1,3 +1,114 @@
+const socket = io()
+
+const {token,room}= Qs.parse(location.search,{ ignoreQueryPrefix: true})
+socket.emit('arrived',{roomname:room},()=>{
+})
+socket.on('update UI',({updatedBoard})=>{
+    data.board=updatedBoard
+    const brownBoxes=document.getElementsByClassName('brownBox')
+    for(let box of brownBoxes){
+        if(box.hasChildNodes()){
+            box.removeChild(box.lastChild)
+        }
+    }
+    updateCheckersUI()
+    const buttons= document.getElementsByTagName("button")
+    for(let button of buttons){ 
+        button.disabled= !button.disabled
+    }
+    const checkers= document.getElementsByClassName("checkers")
+    for(let checker of checkers){
+        checker.disabled=!checker.disabled
+    }
+})
+socket.on('Player left',({username})=>{
+    console.log("user left room ")
+    alert(username +" has left the game, Going back to lobby")
+    socket.emit('close room',{username,room})
+    location.href="/"
+})
+
+function updateCheckersUI(){
+    for(let i=0;i<squares.length;i++){
+        if(squares[i].pawn){
+            const brownBox=document.getElementById((i+1)+"")
+            const checker=document.createElement('div')
+            checker.id=brownBox.id
+            if(squares[i].pawn.isWhite){
+                checker.className="white checker"
+                brownBox.appendChild(checker)
+                if(squares[i].pawn.isQueen){
+                    checker.innerHTML==="Q"
+                    checker.classList.add("queen")
+                }
+            }
+            else{
+                checker.className="black checker"
+                brownBox.appendChild(checker)
+                if(squares[i].pawn.isQueen){
+                    checker.innerHTML==="Q"
+                    checker.classList.add("queen")
+                }
+            }
+            checker.addEventListener("click",(event)=> {
+                event.stopImmediatePropagation();
+                if(burntBox!== null){
+                    burntBox.innerHTML="";
+                    burntBox=null;
+                }
+                if(!firstClick){
+                    if(((squares[parseInt(checker.id)-1].pawn.isWhite===false) && whiteTurn) || 
+                    ((squares[parseInt(checker.id)-1].pawn.isWhite===true) && !whiteTurn)){
+                        alert("Not your checker!");   
+                    }
+                    else{
+                        if((whiteTurn&& !data.didPlayerJustEat)|| (!whiteTurn && !data.didPlayerJustEat)){
+                            currentChecker=checker;
+                            currentCheckerSquaresIndex= parseInt(checker.id)
+                            markPotentialMoveBox(checker);
+                        }
+                        firstClick=true;
+                        currentChecker.classList.add("markedChecker");
+                    }
+                }
+                else{
+                    unmarkBoxes();
+                    currentChecker.classList.remove("markedChecker");
+                    firstClick=false;
+                }
+            })
+        }
+    }
+}
+function updateData(originIndex ,destinationIndex,checkerToEatIndex){
+    squares[destinationIndex-1].pawn= squares[originIndex-1].pawn;
+    squares[originIndex-1]= new Square(null);
+    currentCheckerSquaresIndex=destinationIndex;
+    if(checkerToEatIndex!=null){
+        squares[checkerToEatIndex-1]=new Square(null);
+    }
+    socket.to(room).emit('update UI',{updatedBoard:data.board,senderId:socket.id},()=>{
+
+    })
+    // here will be added an emit to the room updating the squares on the array
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const board= document.getElementById('board')
 let firstClick=false,gameOver=false,whiteTurn=true, burntBox=null;
 let lastTurnBoard=[]
@@ -271,8 +382,8 @@ function calculateIndex(count){
 function addCheckers(){
     const brownBoxes=document.getElementsByClassName('brownBox')
     let count=0;
-    for(let brownBox of brownBoxes){
-        if(count<12 || count > 19)
+    for(let brownBox of brownBoxes){// nn to create default board on the squares then use this
+        if(count<12 || count > 19)  // nn to update to create the board from the squares sent
         {
             let index= calculateIndex(count);
             const checker=document.createElement('div');
@@ -316,6 +427,7 @@ function addCheckers(){
         count++;
     }
 }
+
 const startButton=document.getElementById("start")
 function unmarkBoxes(){
     let markedBoxes=document.getElementsByClassName("marked");
@@ -405,15 +517,7 @@ function upgradeToQueenUI(){
     currentChecker.innerHTML="Q";
     currentChecker.classList.add("queen");
 }
-function updateData(originIndex ,destinationIndex,checkerToEatIndex){
-    squares[destinationIndex-1].pawn= squares[originIndex-1].pawn;
-    squares[originIndex-1]= new Square(null);
-    currentCheckerSquaresIndex=destinationIndex;
-    if(checkerToEatIndex!=null){
-        squares[checkerToEatIndex-1]=new Square(null);
-    }
-    // here will be added an emit to the room updating the squares on the array
-}
+
 function isEatingDirectionPossible(delta,scanning,color){
     let boxToEatIndex=null;
     if(delta<0){
@@ -445,15 +549,3 @@ function canPlayerContinueEating(scanning, color){
         return true
     return false
 }
-function updateBoardUI(updatedBoard){// happens after broadcast to room was emitted
-    data.board=updatedBoard
-    const brownBoxes=document.getElementsByClassName('brownBox')
-    for(let box of brownBoxes){
-        if(box.hasChildNodes()){
-            box.removeChild(box.lastChild)
-        }
-    }
-    addCheckers()
-}
-// might nn to add a function that operates whenever squares array is emitted
-// in order to render the board according to the array

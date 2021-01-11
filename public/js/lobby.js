@@ -1,23 +1,20 @@
 const socket = io()
-
 const createRoomButton= document.getElementById("createroom")
 const {username,password}= Qs.parse(location.search,{ ignoreQueryPrefix: true})
 const loginURL=`http://localhost:3000/users/login?name=${username}&password=${password}`
 const logoutURL=`http://localhost:3000/users/logout`
 const logoutButton= document.getElementById("log-out")
 const userProfileLabel= document.getElementById("userprofile")
-// nn to add lobby features
-// 1- show available rooms + buttons to join
-// 2- show how many users are currently online
-// 4- create new room-- will take room name and check if it already exists in the lobby
-// 5- when a player clicks to join a room, it will be removed from lobby but not from the room list, 
-// wait for events
+const roomNameInput=document.getElementById("roomname")
+const roomListContainer=document.getElementById("rooms")
 
-// const buttons= document.getElementsByTagName("button")
-// for(let button of buttons){
-//     button.disabled= !button.disabled
-// } also for divs in game checkers
+roomNameInput.style.visibility="true"
+// nn to add lobby features
+// 2- show how many users are currently online
+
+
 let userToken
+let currentUser
 logoutButton.addEventListener('click',(event)=>{
     event.preventDefault()
     fetch(logoutURL,{
@@ -32,16 +29,75 @@ logoutButton.addEventListener('click',(event)=>{
         alert(err)
     })
 })
-
 createRoomButton.addEventListener('click',(event)=>{
     event.preventDefault();
-    // here we open an input text box to allow user to insert room name
-    // once user enters the name, the room name will be emitted to the server, checking if it exists
-    // if it exists, will reply a message of room already exists, please enter a diffrent name
-    // if it doesnt exist, will add the room to the server room list
-    // as well as on the client side adding the room to the rooom list
-    // the user himself will be send to the room via emit.to(roomname)
-    // will also add a button next to room description to allow another user to join
+    let roomname=roomNameInput.value
+    socket.emit('checkroom',{roomname},(wasRoomCreated)=>{
+        roomNameInput.value=""
+        if(!wasRoomCreated){
+            return alert("room already exists, please enter a new room")
+        }
+    })
+    socket.emit('updatedata',{username:currentUser.username,roomname},()=>{
+        console.log("room created")
+        createRoomButton.disabled=true
+    })
+})
+socket.on('remove room',({roomname})=>{
+    document.getElementById(roomname+"room").remove()
+})
+socket.on('addaroom',({username,roomname})=>{
+    const roomCheck=document.getElementById(roomname)
+    if(roomCheck){
+        return
+    }  // might nn to make this a form, submitted on the click
+    // simular to index entrance to lobby in chat app
+    const roomUI=document.createElement('form')
+    roomUI.action= "/checkers.html"
+    roomUI.id= roomname+"room"
+    roomUI.innerHTML= roomname+ "</br> Created by: "+username+"   ";
+    const joinRoomButton= document.createElement('button')
+    if(currentUser.username===username){ // nn to make sure if user is in a room, all rooms are unjoinable until he leaves
+        joinRoomButton.disabled=true
+        const cancel= document.createElement('button')
+        cancel.innerHTML="Cancel"
+        roomUI.appendChild(cancel)
+        cancel.addEventListener('click',(event)=>{
+            event.preventDefault()
+            roomUI.remove()
+            socket.emit('close room',{username,roomname},()=>{
+                console.log('room closed')
+                createRoomButton.disabled=false
+            })
+        })
+    }
+    joinRoomButton.innerHTML="Join room"
+    joinRoomButton.id=roomname
+    joinRoomButton.addEventListener('click',(event)=>{
+        event.preventDefault()
+        socket.emit('join room',{roomname},()=>{
+        })
+    })
+    roomUI.appendChild(joinRoomButton)
+    roomListContainer.appendChild(roomUI)
+})
+socket.on('send to room',({roomname})=>{
+    const roomUI=document.getElementById(roomname+"room")
+    const tokenInput=document.createElement('input')
+    tokenInput.type="text"
+    tokenInput.name="token"
+    tokenInput.value=userToken
+    const roomValue=document.createElement('input')
+    roomValue.type="text"
+    roomValue.name="room"
+    roomValue.value=roomname
+    roomUI.appendChild(roomValue)
+    roomUI.appendChild(tokenInput)
+    roomUI.submit()
+})
+socket.on('room full',({roomname})=>{
+    const roomButton= document.getElementById(roomname).disabled=true
+    roomButton.innerHTML="Room is full"
 })
 const attemptEntryToLobby= ()=>{
     fetch(loginURL,{
@@ -56,21 +112,34 @@ const attemptEntryToLobby= ()=>{
     }).then((jsonObj)=>{
         let ratings=jsonObj.user.ratings
         userToken=jsonObj.token
+        currentUser=jsonObj.user
+        let userId=jsonObj.user._id
         userProfileLabel.innerHTML="Welcome back "+jsonObj.user.username+", Your current rating is "+ratings
         try{
-            socket.emit('Login',{username,ratings},(error)=>{
-                if(!error){
-                    alert(error)
+            socket.emit('Login',{userId,username,ratings},(user)=>{
+                if(!user){
+                    alert("User error")
                     location.href='/'
                 }
+                updateRooms();
             })
         }catch(err){
             alert(err)
         }
-        
     }).catch((err)=>{
         alert("Invalid details")
-    })
+    })    
 }
 attemptEntryToLobby();
-
+const updateRooms=()=>{
+    socket.emit('getusers',{},(users)=>{
+        console.log(users)
+        for(let user of users){
+            if(user.room!=="lobby"){
+                socket.emit('updatedata',{username:user.username,roomname:user.room},()=>{
+                    console.log("room updated")
+                })
+            }
+        }
+    })
+}
