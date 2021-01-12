@@ -32,13 +32,13 @@ logoutButton.addEventListener('click',(event)=>{
 createRoomButton.addEventListener('click',(event)=>{
     event.preventDefault();
     let roomname=roomNameInput.value
-    socket.emit('checkroom',{roomname},(wasRoomCreated)=>{
+    socket.emit('Create room',{currentUser,roomname},(wasRoomCreated)=>{
         roomNameInput.value=""
         if(!wasRoomCreated){
             return alert("room already exists, please enter a new room")
         }
     })
-    socket.emit('updatedata',{username:currentUser.username,roomname},()=>{
+    socket.emit('Update room list',{username:currentUser.username,roomname},()=>{
         console.log("room created")
         createRoomButton.disabled=true
     })
@@ -48,10 +48,7 @@ socket.on('remove room',({roomname})=>{
 })
 socket.on('addaroom',({username,roomname})=>{
     const roomCheck=document.getElementById(roomname)
-    if(roomCheck){
-        return
-    }  // might nn to make this a form, submitted on the click
-    // simular to index entrance to lobby in chat app
+    if(roomCheck){return} 
     const roomUI=document.createElement('form')
     roomUI.action= "/checkers.html"
     roomUI.id= roomname+"room"
@@ -75,7 +72,7 @@ socket.on('addaroom',({username,roomname})=>{
     joinRoomButton.id=roomname
     joinRoomButton.addEventListener('click',(event)=>{
         event.preventDefault()
-        socket.emit('join room',{roomname},()=>{
+        socket.emit('join room',{currentUser,roomname},()=>{
         })
     })
     roomUI.appendChild(joinRoomButton)
@@ -91,12 +88,18 @@ socket.on('send to room',({roomname})=>{
     roomValue.type="text"
     roomValue.name="room"
     roomValue.value=roomname
+    const usernameValue=document.createElement('input')
+    usernameValue.type="text"
+    usernameValue.name="username"
+    usernameValue.value= currentUser.username
+    roomUI.appendChild(usernameValue)
     roomUI.appendChild(roomValue)
     roomUI.appendChild(tokenInput)
     roomUI.submit()
 })
 socket.on('room full',({roomname})=>{
-    const roomButton= document.getElementById(roomname).disabled=true
+    const roomButton= document.getElementById(roomname)
+    roomButton.disabled=true
     roomButton.innerHTML="Room is full"
 })
 const attemptEntryToLobby= ()=>{
@@ -136,7 +139,7 @@ const updateRooms=()=>{
         console.log(users)
         for(let user of users){
             if(user.room!=="lobby"){
-                socket.emit('updatedata',{username:user.username,roomname:user.room},()=>{
+                socket.emit('Update room list',{username:user.username,roomname:user.room},()=>{
                     console.log("room updated")
                 })
             }

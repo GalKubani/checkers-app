@@ -1,7 +1,15 @@
 const socket = io()
 
-const {token,room}= Qs.parse(location.search,{ ignoreQueryPrefix: true})
-socket.emit('arrived',{roomname:room},()=>{
+const {token,room,username}= Qs.parse(location.search,{ ignoreQueryPrefix: true})
+let currentUser={}
+if(!room||!token||!username)
+    location.href='/'
+socket.emit('Entered room',{username,roomname:room},(user)=>{
+    if(!user){  
+        alert("User error")
+        location.href='/'
+    }
+    currentUser=user
 })
 socket.on('update UI',({updatedBoard})=>{
     data.board=updatedBoard
@@ -12,6 +20,8 @@ socket.on('update UI',({updatedBoard})=>{
         }
     }
     updateCheckersUI()
+})
+socket.on('change turn',{id:socket.id},()=>{
     const buttons= document.getElementsByTagName("button")
     for(let button of buttons){ 
         button.disabled= !button.disabled
@@ -22,12 +32,14 @@ socket.on('update UI',({updatedBoard})=>{
     }
 })
 socket.on('Player left',({username})=>{
-    console.log("user left room ")
     alert(username +" has left the game, Going back to lobby")
+    // later will try to get him to return to lobby 
+    // nn to add ratings here, the player getting this notification will get 3 ratings
+    // the leaver will not get points
+    // in a normal game, winner will get 3 points loser 1
     socket.emit('close room',{username,room})
     location.href="/"
 })
-
 function updateCheckersUI(){
     for(let i=0;i<squares.length;i++){
         if(squares[i].pawn){
@@ -87,7 +99,7 @@ function updateData(originIndex ,destinationIndex,checkerToEatIndex){
     if(checkerToEatIndex!=null){
         squares[checkerToEatIndex-1]=new Square(null);
     }
-    socket.to(room).emit('update UI',{updatedBoard:data.board,senderId:socket.id},()=>{
+    socket.emit('update UI',{updatedBoard:data.board,id:socket.id},()=>{
 
     })
     // here will be added an emit to the room updating the squares on the array
@@ -289,14 +301,14 @@ function switchTurn(){
     if(currentChecker!==null){
         currentChecker.classList.remove("markedChecker");
     }
-    // here will nn to emit updates, as well as after an eat is confirmed
     data.didPlayerJustEat=false;
-    currentCheckerSquaresIndex=-1
+    currentCheckerSquaresIndex=-1 // might nn to add these to the onchange turn event
     currentChecker=null;
     firstClick=false;
     whiteTurn=!whiteTurn; 
     if(!gameOver)
         headerText.innerHTML="Its the "+(whiteTurn?"white":"black") + " player's turn";
+    socket.emit('change turn',{})
 }
 function createBoard(){
     let isWhite=false;

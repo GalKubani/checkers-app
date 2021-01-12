@@ -3,24 +3,24 @@ const User= require('../models/usermodel')
 
 const usersPlaying=[]
 
-const addUserPlaying=(user)=>{
+const addUserPlaying=(user,id)=>{
+    user.id=id
     usersPlaying.push(user)
 }
 const addUserToLobby=(user)=>{
     users.push(user)
 }
-const removePlayer=(user)=>{
+const removePlayer=(id)=>{
     const index= usersPlaying.findIndex((user)=>{
         return user.id=== id
     })
+
     if(index !==-1){
         return usersPlaying.splice(index,1)[0]
     }
 }
 const getUsersPlaying=()=>{
     return usersPlaying
-    // filter returns a filtered array that returns
-    // true to the statement in the arrow func
 }
 const addUser=({id, username, ratings,userId})=>{
     username=username.trim().toLowerCase()
@@ -53,6 +53,17 @@ const getUserList=()=>{
 const getUser=(id)=>{
     return users.find((user)=> user.id===id )
 }
+const getUserByUsername=(username)=>{
+    return users.find((user)=> user.username===username)
+}
+const getPlayer=(id)=>{
+    return usersPlaying.find((player)=> player.id===id )
+}
+const getPlayersInRoom=(room)=>{
+    return usersPlaying.filter((player)=> player.room===room)
+    // filter returns a filtered array that returns
+    // true to the statement in the arrow func
+}
 const getUsersInRoom=(room)=>{
     return users.filter((user)=> user.room===room)
     // filter returns a filtered array that returns
@@ -72,6 +83,6 @@ module.exports= {
     updateUserRoom,
     getUserList,
     getUsersInRoom,
-    addUserPlaying,
-    addUserToLobby,getUsersPlaying,removePlayer
+    addUserPlaying,getPlayer,getUserByUsername,
+    addUserToLobby,getUsersPlaying,removePlayer,getPlayersInRoom
 }
