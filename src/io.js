@@ -69,18 +69,24 @@ io.on('connection',(socket)=>{
         const player= addUser({id:socket.id, username,ratings: user.ratings,userId:user.userId})
         player.room=roomname
         addUserPlaying(player,socket.id)
-        // console.log(getPlayersInRoom(roomname))
         cb(user)
     })
-    socket.on('change turn',({id},cb)=>{
+    socket.on('change turn',({id,username},cb)=>{
         const player= getPlayer(id)
-        socket.broadcast.to(player.room).emit('change turn',{})
+        const room= player.room
+        const playerEndingTurn=username
+        socket.broadcast.to(room).emit('change turn',{playerEndingTurn})
         cb()
     })
-    socket.on('update UI',({board,id},cb)=>{
+    socket.on('update UI',({updatedBoard,id},cb)=>{
         const player= getPlayer(id)
-        socket.broadcast.to(player.room).emit('update UI',{board})
-        cb()
+        const room= player.room
+        socket.broadcast.to(room).emit('update UI',{updatedBoard})
+        cb(updatedBoard)
+    })
+    socket.on('start game',({room,username})=>{
+        const whiteplayer=username
+        io.to(room).emit('start game',{whiteplayer})
     })
     socket.on('close room',({username,roomname},cb)=>{
         socket.join('lobby')
