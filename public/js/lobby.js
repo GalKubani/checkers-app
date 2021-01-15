@@ -37,14 +37,18 @@ createRoomButton.addEventListener('click',(event)=>{
         if(!wasRoomCreated){
             return alert("room already exists, please enter a new room")
         }
-    })
-    socket.emit('Update room list',{username:currentUser.username,roomname},()=>{
-        console.log("room created")
-        createRoomButton.disabled=true
+        socket.emit('Update room list',{username:currentUser.username,roomname},()=>{
+            console.log("room created")
+            createRoomButton.disabled=true
+        })
     })
 })
 socket.on('remove room',({roomname})=>{
-    document.getElementById(roomname+"room").remove()
+    try{
+        document.getElementById(roomname+"room").remove()
+    }catch(err){
+    }
+    
 })
 socket.on('addaroom',({username,roomname})=>{
     const roomCheck=document.getElementById(roomname)
@@ -62,10 +66,8 @@ socket.on('addaroom',({username,roomname})=>{
         cancel.addEventListener('click',(event)=>{
             event.preventDefault()
             roomUI.remove()
-            socket.emit('close room',{username,roomname},()=>{
-                console.log('room closed')
-                createRoomButton.disabled=false
-            })
+            createRoomButton.disabled=false
+            socket.emit('close room',{roomname})
         })
     }
     joinRoomButton.innerHTML="Join room"
@@ -102,6 +104,11 @@ socket.on('room full',({roomname})=>{
     roomButton.disabled=true
     roomButton.innerHTML="Room is full"
 })
+function changeControls(event){
+    event.stopPropagation();
+    event.preventDefault();
+}
+document.addEventListener('click',changeControls,true)
 const attemptEntryToLobby= ()=>{
     fetch(loginURL,{
         method:'POST',
@@ -124,6 +131,7 @@ const attemptEntryToLobby= ()=>{
                     alert("User error")
                     location.href='/'
                 }
+                document.removeEventListener('click',changeControls,true)
                 updateRooms();
             })
         }catch(err){

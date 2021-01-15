@@ -7,20 +7,19 @@ const headerText=document.getElementById("text");
 const startButton=document.getElementById("start")
 const board= document.getElementById('board')
 const skipButton=document.getElementById("skipturn");
+const updateRatingsURL=`http://localhost:3000/users/updateratings?ratings=`
 
-let firstClick=false,gameOver=false,whiteTurn=true, burntBox=null;
+skipButton.disabled=true;
+let firstClick=false,gameOver=false,whiteTurn=true, burntBox=null,currentCheckerSquaresIndex;
 let squares=[];
 let data= new GameData(squares,false);
 let currentChecker=document.createElement('div')
 currentChecker.id="default"
-let currentCheckerSquaresIndex;
 function GameData(board,didPlayerJustEat){
     this.board=board;
     this.didPlayerJustEat= didPlayerJustEat
 }
-function Square(pawn){
-    this.pawn=pawn;
-}
+function Square(pawn){this.pawn=pawn}
 function Pawn(isWhite,isQueen){
     this.isWhite=isWhite;
     this.isQueen=isQueen;
@@ -32,7 +31,6 @@ function Player(color){
 let black= new Player("black");
 let white= new Player("white");
 let currentUser={}
-
 
 socket.emit('Entered room',{username,roomname:room},(user)=>{
     if(!user){  
@@ -47,10 +45,6 @@ socket.on('start game',({whiteplayer})=>{
     if(username!==whiteplayer)
         document.addEventListener('click',changeControls,true)
 })
-socket.on('update UI',({updatedBoard})=>{
-    updateBoard(updatedBoard)
-    updateCheckersUI()
-})
 socket.on('change turn',({})=>{
     document.removeEventListener('click',changeControls,true)
     headerText.innerHTML="Its your turn"
@@ -62,12 +56,57 @@ socket.on('change turn',({})=>{
     black.countCheckers()
     white.countCheckers()  
 })
-socket.on('Player left',({username})=>{
-    alert(username +" has left the game, Going back to lobby")
-    // later will try to get him to return to lobby 
-    // nn to add ratings here, the player getting this notification will get 3 ratings
-    // the leaver will not get points
-    // in a normal game, winner will get 3 points loser 1
+socket.on('update UI',({updatedBoard,checkerThatBurnt})=>{
+    updateBoard(updatedBoard)
+    updateCheckersUI()
+    if(checkerThatBurnt){
+        burntBox=document.getElementById(checkerThatBurnt)
+        burntBox.classList.add("burntchecker");
+        burntBox.innerHTML="Burnt";
+    }
+})
+socket.on('Player left',async ({username})=>{
+    confirm(username +" has left the game, Going back to lobby, your ratings will be updated")
+    let url=updateRatingsURL+"3"
+    await fetch(url,{
+        method:'PATCH', 
+        headers: {'Authorization':'Bearer '+token}
+    }).then((res)=>{
+        if(res.ok){
+            return res.json()
+        }else{
+            res.status(500).send("error")
+        }
+    }).catch((err)=>{
+        confirm(err)
+    })
+    socket.emit('close room',{username,room})
+    location.href="/"
+})
+socket.on('Player victory',async ({winner})=>{
+    let ratings;
+    let url=updateRatingsURL+3
+    headerText.innerHTML= winner+" has won!"
+    if(username!==winner){
+        alert("Congratulations to the winner "+winner+",better luck next time "+ username);
+        url=updateRatingsURL+1
+    }   
+    await fetch(url,{
+        method:'PATCH',
+        headers: {'Authorization':'Bearer '+token}
+    }).then((res)=>{
+        if(res.ok){
+            return res.json()
+        }else{
+            res.status(500).send("error")
+        }
+    }).then((jsonObj)=>{
+        ratings=jsonObj.user.ratings
+    }).catch((err)=>{
+        confirm(err)
+    })
+    confirm("Your updated rating is "+ ratings)
+    //maybe add a rematch button here
     socket.emit('close room',{username,room})
     location.href="/"
 })
@@ -82,19 +121,18 @@ const updateBoard=(newBoard)=>{
         }
     }
 }
-function updateData(originIndex ,destinationIndex,checkerToEatIndex,checkerBurnt){
-    if(!checkerBurnt){
-        squares[destinationIndex-1].pawn= squares[originIndex-1].pawn;
-        squares[originIndex-1]= new Square(null);
-        currentCheckerSquaresIndex=destinationIndex;
-        if(checkerToEatIndex!=null){
-            squares[checkerToEatIndex-1]=new Square(null);
-        }
+function updateData(checkerToEatIndex,checkerThatBurnt){
+    if(checkerToEatIndex!=null){
+        squares[checkerToEatIndex-1]=new Square(null);
     }
-    socket.emit('update UI',{updatedBoard:data.board,id:socket.id},(updatedBoard)=>{
+    socket.emit('update UI',{updatedBoard:data.board,id:socket.id,checkerThatBurnt},(updatedBoard)=>{
         updateBoard(updatedBoard)
         updateCheckersUI()
     })
+}
+function endGameUI(){
+    socket.emit('Player victory',{username,room})
+    gameOver=true;
 }
 function changeControls(event){
     event.stopPropagation();
@@ -109,18 +147,14 @@ function updateCheckersUI(){
             if(squares[i].pawn.isWhite){
                 checker.className="white checker"
                 brownBox.appendChild(checker)
-                if(squares[i].pawn.isQueen){
-                    currentChecker=checker
-                    upgradeToQueenUI()
-                }
+                if(squares[i].pawn.isQueen)
+                    upgradeToQueenUI(checker)
             }
             else{
                 checker.className="black checker"
                 brownBox.appendChild(checker)
-                if(squares[i].pawn.isQueen){
-                    currentChecker=checker
-                    upgradeToQueenUI()
-                }
+                if(squares[i].pawn.isQueen)
+                    upgradeToQueenUI(checker)
             }
             checker.addEventListener("click",(event)=> {
                 event.stopImmediatePropagation();
@@ -140,7 +174,8 @@ function updateCheckersUI(){
                             markPotentialMoveBox(checker);
                         }
                         firstClick=true;
-                        currentChecker.classList.add("markedChecker");
+                        currentChecker=document.getElementById(currentCheckerSquaresIndex)
+                        currentChecker.classList.add("markedChecker");// doesnt mark the checker?
                     }
                 }
                 else{
@@ -153,9 +188,13 @@ function updateCheckersUI(){
     }
 }
 function switchTurn(){
-    if(currentChecker!==null){
-        currentChecker.classList.remove("markedChecker");
+    clearMarks=document.getElementsByClassName("markedChecker")
+    for(let box of clearMarks){
+        box.classList.remove("markedChecker")
     }
+    if(currentChecker!==null)
+        currentChecker.classList.remove("markedChecker");
+    skipButton.disabled=true;
     socket.emit('change turn',{id:socket.id,username},()=>{
         document.addEventListener('click',changeControls,true)
         headerText.innerHTML="Please wait for your turn"
@@ -178,8 +217,6 @@ const startGameFunc=()=>{
     white.countCheckers();
     black.countCheckers();
     startButton.remove();
-    skipButton.disabled=false;
-    headerText.innerHTML="Its the white player's turn";
 }
 Player.prototype.countCheckers=function(){
     let totalCheckers=document.getElementsByClassName("black checker");
@@ -194,7 +231,7 @@ Player.prototype.countCheckers=function(){
     }
     this.remainingCheckers=totalCheckers.length;
     if(this.remainingCheckers===0){
-        endGameUI(this);
+        endGameUI();
     }
 }
 Player.prototype.didPlayerMissAnEatMove=function(){
@@ -210,33 +247,17 @@ Player.prototype.didPlayerMissAnEatMove=function(){
                 currentChecker=checker;
                 currentCheckerSquaresIndex=parseInt(checker.id)
                 if(canPlayerContinueEating(true,this.color)){
-                    burnCheckerUI(this);
-                    updateData(0,0,0,true)
-                    return true;
+                    burnCheckerUI();
+                    alert(username+", your checker just burnt, pay more attention!");
+                    updateData(0,currentCheckerSquaresIndex)
+                     return true;
                 }
             }
         }
     }
     return false;
 }
-function checkIfCheckerUpgradesToQueen(){
-    if(whiteTurn){
-        switch (currentCheckerSquaresIndex){
-            case 2: case 4: case 6: case 8: 
-            upgradeToQueenUI();
-            squares[currentCheckerSquaresIndex-1].pawn.isQueen=true;
-            break;
-        }
-    }
-    else{
-        switch (currentCheckerSquaresIndex){
-            case 57: case 59: case 61: case 63: 
-            upgradeToQueenUI();
-            squares[currentCheckerSquaresIndex-1].pawn.isQueen=true;
-            break;
-        }
-    }
-}
+
 function attemptEatMove(possibleDestinationBoxID, delta, scanning){
     let boxId= currentCheckerSquaresIndex;
     boxId+=delta*7;
@@ -329,7 +350,6 @@ function isCheckerMovePossible(selectedBoxID,delta){
 skipButton.addEventListener("click",(event)=>{
     switchTurn();
 })
-skipButton.disabled=true;
 function createBoard(){
     let isWhite=false;
     let count=1;
@@ -433,63 +453,24 @@ function unmarkBoxes(){
     if(markedBoxes[0]!=null)
         markedBoxes[0].classList.remove("marked");
 }
-function endGameUI(player){
-    gameOver=true;
-    skipButton.disabled=true;
-    alert("Congratulations to the winner!");
-    if(player.color==="white")
-        headerText.innerHTML= "Black player won";
-    else
-        headerText.innerHTML="White player won";
-    const allBoxes= document.getElementsByClassName("box");
-    for(let box of allBoxes){
-        box.disabled=true;
-    }
-    const allCheckers= document.getElementsByClassName("checker")
-    for(let checker of allCheckers){
-        checker.disabled=true;
-    }
-}
-function burnCheckerUI(player){
-    squares[(currentChecker.id*1)-1]=new Square(null);
-    data.board[(currentChecker.id*1)-1]= new Square(null)
-    burntBox=document.getElementById(currentChecker.id)
-    burntBox.classList.add("burntchecker");
-    burntBox.innerHTML="Burnt";
+function burnCheckerUI(){
+    squares[currentCheckerSquaresIndex-1]=new Square(null);// might not need
     currentChecker.remove();
-    player.countCheckers();
-    alert(player.color+" player, your checker has burnt, pay more attention!");
-}
-function confirmMoveUI(destinationBoxID){
-    const destinationBox=document.getElementById(destinationBoxID+"")
-    destinationBox.appendChild(currentChecker);
-    currentChecker.id=destinationBox.id;    
-    currentChecker.classList.remove("markedChecker");
 }
 function validateMoveConfirmation(destinationBoxID,checkerToEatID){
     unmarkBoxes();
-    if((whiteTurn && !data.didPlayerJustEat )||(!whiteTurn &&!data.didPlayerJustEat)){
-        let color=whiteTurn?"white":"black";
-        if(!canPlayerContinueEating(true,color))
-            confirmMoveUI(destinationBoxID);
-        else{
-            if(color==="white")
-                burnCheckerUI(white);
-            else
-                burnCheckerUI(black);
-        }
-    }
-    else
-        confirmMoveUI(destinationBoxID);
+    squares[destinationBoxID-1].pawn= squares[currentCheckerSquaresIndex-1].pawn;
+    squares[currentCheckerSquaresIndex-1]= new Square(null);
+    checkIfCheckerUpgradesToQueen(destinationBoxID);
     if(checkerToEatID)
-        updateData((currentCheckerSquaresIndex),destinationBoxID,checkerToEatID);
+        updateData(checkerToEatID);
     else
-        updateData(currentCheckerSquaresIndex,destinationBoxID)
-    checkIfCheckerUpgradesToQueen();
+        updateData()
     if((whiteTurn && data.didPlayerJustEat)||(!whiteTurn && data.didPlayerJustEat)){
         document.getElementById(checkerToEatID+"").firstChild.remove();
         black.countCheckers();
         white.countCheckers();
+        currentCheckerSquaresIndex=destinationBoxID
         if(!canPlayerContinueEating(false))
             switchTurn();
     }
@@ -501,9 +482,31 @@ function validateMoveConfirmation(destinationBoxID,checkerToEatID){
         switchTurn();
     }   
 }
-function upgradeToQueenUI(){
-    currentChecker.innerHTML="Q";
-    currentChecker.classList.add("queen");
+function upgradeToQueenUI(thisChecker){
+    if(!thisChecker){
+        currentChecker.innerHTML="Q";
+        currentChecker.classList.add("queen");
+    }
+    else{
+        thisChecker.innerHTML="Q";
+        thisChecker.classList.add("queen");
+    }
+}
+function checkIfCheckerUpgradesToQueen(destinationBoxID){
+    if(whiteTurn){
+        switch (destinationBoxID){
+            case 2: case 4: case 6: case 8: 
+            squares[destinationBoxID-1].pawn.isQueen=true;
+            break;
+        }
+    }
+    else{
+        switch (destinationBoxID){
+            case 57: case 59: case 61: case 63: 
+            squares[destinationBoxID-1].pawn.isQueen=true;
+            break;
+        }
+    }
 }
 function isEatingDirectionPossible(delta,scanning,color){
     let boxToEatIndex=null;

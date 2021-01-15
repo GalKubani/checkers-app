@@ -8,7 +8,7 @@ const port= process.env.PORT || 3000
 let playerOne={}
 let playerTwo={}
 let firstUser=true
-const {getUserByUsername,getUser,addUser,getPlayer,removePlayer,removeUser,getUsersPlaying,getPlayersInRoom,addUserPlaying,updateUserRatings,getUsersInRoom,getUserList,updateUserRoom}= require('./utils/usersutils')
+const {getUser,getUsersInRoom,addUser,getPlayer,removePlayer,removeUser,getUsersPlaying,getPlayersInRoom,addUserPlaying,updateUserRoom}= require('./utils/usersutils')
 io.on('connection',(socket)=>{
     console.log('New connection')
     socket.on('Login', ({userId,username,ratings}, callback)=>{
@@ -32,6 +32,12 @@ io.on('connection',(socket)=>{
             cb(true)
         }
     })
+    socket.on('close room',({roomname})=>{
+        socket.join('lobby')
+        socket.leave(roomname)
+        updateUserRoom({id:socket.id,roomname:'lobby'})
+        io.to('lobby').emit('remove room',{roomname})
+    })
     socket.on('join room',({currentUser,roomname},cb)=>{
         socket.join(roomname)
         socket.leave('lobby')
@@ -43,9 +49,9 @@ io.on('connection',(socket)=>{
     })
     socket.on('Update room list',({username,roomname},cb)=>{
         let roomFull=getPlayersInRoom(roomname).length>1?true:false
+        let roomFullplayers=getUsersInRoom(roomname).length>1?true:false
         io.to('lobby').emit('addaroom',{username,roomname})
-        console.log(roomFull)
-        if(roomFull)
+        if(roomFull||roomFullplayers)
             io.to('lobby').emit('room full',({roomname}))
         cb()
     })
@@ -71,6 +77,10 @@ io.on('connection',(socket)=>{
         addUserPlaying(player,socket.id)
         cb(user)
     })
+    socket.on('start game',({room,username})=>{
+        const whiteplayer=username
+        io.to(room).emit('start game',{whiteplayer})
+    })
     socket.on('change turn',({id,username},cb)=>{
         const player= getPlayer(id)
         const room= player.room
@@ -78,21 +88,14 @@ io.on('connection',(socket)=>{
         socket.broadcast.to(room).emit('change turn',{playerEndingTurn})
         cb()
     })
-    socket.on('update UI',({updatedBoard,id},cb)=>{
+    socket.on('update UI',({updatedBoard,id,checkerThatBurnt},cb)=>{
         const player= getPlayer(id)
         const room= player.room
-        socket.broadcast.to(room).emit('update UI',{updatedBoard})
+        socket.broadcast.to(room).emit('update UI',{updatedBoard,checkerThatBurnt})
         cb(updatedBoard)
     })
-    socket.on('start game',({room,username})=>{
-        const whiteplayer=username
-        io.to(room).emit('start game',{whiteplayer})
-    })
-    socket.on('close room',({username,roomname},cb)=>{
-        socket.join('lobby')
-        socket.leave(roomname)
-        updateUserRoom({id:socket.id,roomname})
-        io.to('lobby').emit('remove room',{roomname})
+    socket.on('Player victory',({username,room})=>{
+        io.to(room).emit('Player victory',{winner:username})
     })
     socket.on('disconnect',({})=>{
         console.log("Disconnected")
