@@ -7,7 +7,7 @@ const headerText=document.getElementById("text");
 const startButton=document.getElementById("start")
 const board= document.getElementById('board')
 const skipButton=document.getElementById("skipturn");
-const updateRatingsURL=`http://localhost:3000/users/updateratings?ratings=`
+const updateRatingsURL=`/users/updateratings?ratings=`
 
 skipButton.disabled=true;
 let firstClick=false,gameOver=false,whiteTurn=true, burntBox=null,currentCheckerSquaresIndex;

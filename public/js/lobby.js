@@ -1,8 +1,8 @@
 const socket = io()
 const createRoomButton= document.getElementById("createroom")
 const {username,password}= Qs.parse(location.search,{ ignoreQueryPrefix: true})
-const loginURL=`http://localhost:3000/users/login?name=${username}&password=${password}`
-const logoutURL=`http://localhost:3000/users/logout`
+const loginURL=`/users/login?name=${username}&password=${password}`
+const logoutURL=`/users/logout`
 const logoutButton= document.getElementById("log-out")
 const userProfileLabel= document.getElementById("userprofile")
 const roomNameInput=document.getElementById("roomname")
