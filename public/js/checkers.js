@@ -66,7 +66,7 @@ socket.on('update UI',({updatedBoard,checkerThatBurnt})=>{
     }
 })
 socket.on('Player left',async ({username})=>{
-    confirm(username +" has left the game, Going back to lobby, your ratings will be updated")
+    alert(username +" has left the game, Going back to lobby, your ratings will be updated")
     let url=updateRatingsURL+"3"
     await fetch(url,{
         method:'PATCH', 
@@ -78,7 +78,7 @@ socket.on('Player left',async ({username})=>{
             res.status(500).send("error")
         }
     }).catch((err)=>{
-        confirm(err)
+        alert(err)
     })
     socket.emit('close room',{username,room})
     location.href="/"
@@ -101,7 +101,7 @@ socket.on('Player victory',async ({winner})=>{
             res.status(500).send("error")
         }
     }).then((jsonObj)=>{
-        ratings=jsonObj.user.ratings
+        ratings=jsonObj.ratings
     }).catch((err)=>{
         confirm(err)
     })
