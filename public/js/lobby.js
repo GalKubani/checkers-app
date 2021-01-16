@@ -109,8 +109,8 @@ function changeControls(event){
     event.preventDefault();
 }
 document.addEventListener('click',changeControls,true)
-const attemptEntryToLobby= ()=>{
-    fetch(loginURL,{
+const attemptEntryToLobby= async ()=>{
+    await fetch(loginURL,{
         method:'POST',
     }).then((res)=>{
         if(res.ok){
