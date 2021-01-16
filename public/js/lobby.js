@@ -137,8 +137,8 @@ const attemptEntryToLobby= async ()=>{
         }catch(err){
             alert(err)
         }
-    }).catch((err)=>{
-        alert("Invalid details")
+    }).catch((error)=>{
+        alert(error)
     })    
 }
 attemptEntryToLobby();
