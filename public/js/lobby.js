@@ -11,6 +11,7 @@ const userListContainer=document.getElementById("userlist")
 const whoIsOnlineButton=document.getElementById("checkonline")
 
 roomNameInput.style.visibility="true"
+let roomColor=0;
 let userToken
 let currentUser
 whoIsOnlineButton.addEventListener('click',(event)=>{
@@ -80,6 +81,17 @@ socket.on('addaroom',({username,roomname})=>{
     const roomCheck=document.getElementById(roomname)
     if(roomCheck){return} 
     const roomUI=document.createElement('form')
+    if(roomColor!==0){
+        if(roomColor===1){
+            roomUI.style.border="solid green"
+            roomUI.classList.add("half")
+        }
+        else{
+            roomUI.style.border="solid red"
+            roomUI.classList.add("double")
+        }    
+        roomColor=0
+    }
     roomUI.action= "/checkers.html"
     roomUI.id= roomname+"room"
     roomUI.innerHTML= roomname+ "</br> Created by: "+username+"   ";
@@ -100,14 +112,32 @@ socket.on('addaroom',({username,roomname})=>{
     joinRoomButton.id=roomname
     joinRoomButton.addEventListener('click',(event)=>{
         event.preventDefault()
-        socket.emit('join room',{currentUser,roomname},()=>{
+        let ratingsMultiplier=1
+        if(roomUI.classList.contains("half")){
+            ratingsMultiplier=0.5
+        }
+        if(roomUI.classList.contains("double")){
+            ratingsMultiplier=2
+        }
+        socket.emit('join room',{currentUser,roomname,ratingsMultiplier},()=>{
         })
     })
     roomUI.appendChild(joinRoomButton)
     roomListContainer.appendChild(roomUI)
 })
-socket.on('send to room',({roomname})=>{
+socket.on('send to room',({roomname,playerTwo,ratingsMultiplier})=>{
+    if(playerTwo.username !== currentUser.username){
+        switch (ratingsMultiplier){
+            case 2: ratingsMultiplier=0.5; break;
+            case 0.5: ratingsMultiplier=2; break;
+        }
+    }
     const roomUI=document.getElementById(roomname+"room")
+    const ratingsMultiplierValue=document.createElement('input')
+    ratingsMultiplierValue.type="number"
+    ratingsMultiplierValue.name="ratingsMul"
+    ratingsMultiplierValue.value=ratingsMultiplier
+    ratingsMultiplierValue.visibility=false
     const tokenInput=document.createElement('input')
     tokenInput.type="text"
     tokenInput.name="token"
@@ -121,6 +151,7 @@ socket.on('send to room',({roomname})=>{
     usernameValue.type="text"
     usernameValue.name="username"
     usernameValue.value= currentUser.username
+    roomUI.appendChild(ratingsMultiplierValue)
     roomUI.appendChild(usernameValue)
     roomUI.appendChild(roomValue)
     roomUI.appendChild(tokenInput)
@@ -170,10 +201,14 @@ const attemptEntryToLobby= async ()=>{
 }
 attemptEntryToLobby();
 const updateRooms=()=>{
-    socket.emit('Get users playing',{},(users)=>{
+    socket.emit('Get users playing',{},async (users)=>{
         for(let user of users){
             if(user.room!=="lobby"){
-                socket.emit('Update room list',{username:user.username,roomname:user.room},()=>{
+                if(currentUser.ratings>user.ratings+15)
+                    roomColor=1
+                if(currentUser.ratings<user.ratings-15)
+                    roomColor=2
+                await socket.emit('Update room list',{username:user.username,roomname:user.room},()=>{
                     console.log("room updated")
                 })
             }

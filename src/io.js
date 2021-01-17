@@ -40,12 +40,12 @@ const runSocketIo=(server)=>{
             updateUserRoom({id:socket.id,roomname:'lobby'})
             io.to('lobby').emit('remove room',{roomname})
         })
-        socket.on('join room',({currentUser,roomname},cb)=>{
+        socket.on('join room',({currentUser,roomname,ratingsMultiplier},cb)=>{
             socket.join(roomname)
             socket.leave('lobby')
             playerTwo= currentUser
             updateUserRoom({id:socket.id,roomname})
-            io.to(roomname).emit('send to room',({roomname}))
+            io.to(roomname).emit('send to room',({roomname,playerTwo,ratingsMultiplier}))
             io.to('lobby').emit('room full',({roomname}))
             cb()
         })

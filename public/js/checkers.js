@@ -1,5 +1,5 @@
 const socket = io()
-const {token,room,username}= Qs.parse(location.search,{ ignoreQueryPrefix: true})
+const {token,room,username,ratingsMul}= Qs.parse(location.search,{ ignoreQueryPrefix: true})
 if(!room||!token||!username)
     location.href='/'
 
@@ -68,7 +68,7 @@ socket.on('update UI',({updatedBoard,checkerThatBurnt})=>{
 })
 socket.on('Player left',async ({username})=>{
     alert(username +" has left the game, Going back to lobby, your ratings will be updated")
-    let url=updateRatingsURL+"3"
+    let url=updateRatingsURL+(3*ratingsMul)
     await fetch(url,{
         method:'PATCH', 
         headers: {'Authorization':'Bearer '+token}
@@ -86,11 +86,11 @@ socket.on('Player left',async ({username})=>{
 })
 socket.on('Player victory',async ({winner})=>{
     let ratings;
-    let url=updateRatingsURL+3
+    let url=updateRatingsURL+(3*ratingsMul)
     headerText.innerHTML= winner+" has won!"
     if(username!==winner){
         alert("Congratulations to the winner "+winner+",better luck next time "+ username);
-        url=updateRatingsURL+1
+        url=updateRatingsURL+(1*ratingsMul)
     }   
     await fetch(url,{
         method:'PATCH',
@@ -107,7 +107,6 @@ socket.on('Player victory',async ({winner})=>{
         confirm(err)
     })
     confirm("Your updated rating is "+ ratings)
-    //maybe add a rematch button here
     socket.emit('close room',{username,room})
     location.href="/"
 })
