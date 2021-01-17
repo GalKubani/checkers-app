@@ -33,7 +33,9 @@ whoIsOnlineButton.addEventListener('click',(event)=>{
             for(let label of labels){
                 label.remove()
             }
-            document.getElementById("removelabel").remove()
+            try{
+                document.getElementById("removelabel").remove()
+            }catch(err){}
             closeButton.remove()
             whoIsOnlineButton.disabled=false
         })
