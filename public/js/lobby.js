@@ -19,7 +19,7 @@ logoutButton.addEventListener('click',(event)=>{
     event.preventDefault()
     fetch(logoutURL,{
         method: 'POST',
-        headers: {'Authorization': `Bearer ${userToken}`}
+        headers: {'Authorization': `Bearer `+userToken}
     }).then((res)=>{
         if(res.ok)
             return location.href='/'
