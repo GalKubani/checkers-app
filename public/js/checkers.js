@@ -111,6 +111,7 @@ socket.on('Player victory',async ({winner})=>{
     socket.emit('close room',{username,room})
     location.href="/"
 })
+
 const updateBoard=(newBoard)=>{
     for(let i=0;i<64;i++){
         data.board[i]=newBoard[i]
@@ -258,7 +259,6 @@ Player.prototype.didPlayerMissAnEatMove=function(){
     }
     return false;
 }
-
 function attemptEatMove(possibleDestinationBoxID, delta, scanning){
     let boxId= currentCheckerSquaresIndex;
     boxId+=delta*7;
@@ -484,14 +484,8 @@ function validateMoveConfirmation(destinationBoxID,checkerToEatID){
     }   
 }
 function upgradeToQueenUI(thisChecker){
-    if(!thisChecker){
-        currentChecker.innerHTML="Q";
-        currentChecker.classList.add("queen");
-    }
-    else{
-        thisChecker.innerHTML="Q";
-        thisChecker.classList.add("queen");
-    }
+    thisChecker.innerHTML="Q";
+    thisChecker.classList.add("queen");
 }
 function checkIfCheckerUpgradesToQueen(destinationBoxID){
     if(whiteTurn){

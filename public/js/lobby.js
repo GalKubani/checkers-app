@@ -84,7 +84,7 @@ socket.on('addaroom',({username,roomname})=>{
     roomUI.id= roomname+"room"
     roomUI.innerHTML= roomname+ "</br> Created by: "+username+"   ";
     const joinRoomButton= document.createElement('button')
-    if(currentUser.username===username){ // nn to make sure if user is in a room, all rooms are unjoinable until he leaves
+    if(currentUser.username===username){ 
         joinRoomButton.disabled=true
         const cancel= document.createElement('button')
         cancel.innerHTML="Cancel"
