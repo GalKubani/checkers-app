@@ -16,7 +16,7 @@ io.on('connection',(socket)=>{
         const user= addUser({id:socket.id, username, ratings, userId})
         callback(user)
     })
-    socket.on('getusers', ({},callback)=>{
+    socket.on('Get users playing', ({},callback)=>{
         const users=getUsersPlaying()
         callback(users)
     })

@@ -18,7 +18,7 @@ whoIsOnlineButton.addEventListener('click',(event)=>{
     socket.emit('Get lobby users',{},(userList)=>{
         for(let user of userList){
             const label=document.createElement('label')
-            label.classList.add("user label")
+            label.classList.add("userlabel")
             label.innerHTML= user.username+" with a rating of "+user.ratings
             userListContainer.appendChild(label)
         }
@@ -27,7 +27,7 @@ whoIsOnlineButton.addEventListener('click',(event)=>{
         closeButton.innerHTML="Close"
         closeButton.addEventListener('click',(event)=>{
             event.preventDefault()
-            const labels=document.getElementsByClassName("user label")
+            const labels=document.getElementsByClassName("userlabel")
             for(let label of labels){
                 label.remove()
             }
@@ -165,8 +165,7 @@ const attemptEntryToLobby= async ()=>{
 }
 attemptEntryToLobby();
 const updateRooms=()=>{
-    socket.emit('getusers',{},(users)=>{
-        console.log(users)
+    socket.emit('Get users playing',{},(users)=>{
         for(let user of users){
             if(user.room!=="lobby"){
                 socket.emit('Update room list',{username:user.username,roomname:user.room},()=>{
