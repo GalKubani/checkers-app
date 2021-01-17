@@ -19,12 +19,13 @@ whoIsOnlineButton.addEventListener('click',(event)=>{
         for(let user of userList){
             const label=document.createElement('label')
             label.classList.add("userlabel")
-            label.innerHTML= user.username+" with a rating of "+user.ratings
+            label.innerHTML= user.username+" with a rating of "+user.ratings+"</br>"
             userListContainer.appendChild(label)
         }
         whoIsOnlineButton.disabled=true
         const closeButton=document.createElement('button')
         closeButton.innerHTML="Close"
+        userListContainer.appendChild(closeButton)
         closeButton.addEventListener('click',(event)=>{
             event.preventDefault()
             const labels=document.getElementsByClassName("userlabel")
