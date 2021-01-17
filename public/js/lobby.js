@@ -15,9 +15,9 @@ roomNameInput.style.visibility="true"
 
 let userToken
 let currentUser
-logoutButton.addEventListener('click',(event)=>{
+logoutButton.addEventListener('click', async (event)=>{
     event.preventDefault()
-    fetch(logoutURL,{
+    await fetch(logoutURL,{
         method: 'POST',
         headers: {'Authorization': `Bearer `+userToken}
     }).then((res)=>{
