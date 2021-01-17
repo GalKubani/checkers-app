@@ -9,6 +9,7 @@ const board= document.getElementById('board')
 const skipButton=document.getElementById("skipturn");
 const updateRatingsURL=`/users/updateratings?ratings=`
 
+alert("Whoever clicks start first will begin as the white player")
 skipButton.disabled=true;
 let firstClick=false,gameOver=false,whiteTurn=true, burntBox=null,currentCheckerSquaresIndex;
 let squares=[];

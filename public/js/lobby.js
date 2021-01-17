@@ -7,14 +7,35 @@ const logoutButton= document.getElementById("log-out")
 const userProfileLabel= document.getElementById("userprofile")
 const roomNameInput=document.getElementById("roomname")
 const roomListContainer=document.getElementById("rooms")
+const userListContainer=document.getElementById("userlist")
+const whoIsOnlineButton=document.getElementById("checkonline")
 
 roomNameInput.style.visibility="true"
-// nn to add lobby features
-// 2- show how many users are currently online
-
-
 let userToken
 let currentUser
+whoIsOnlineButton.addEventListener('click',(event)=>{
+    event.preventDefault()
+    socket.emit('Get lobby users',{},(userList)=>{
+        for(let user of userList){
+            const label=document.createElement('label')
+            label.classList.add("user label")
+            label.innerHTML= user.username+" with a rating of "+user.ratings
+            userListContainer.appendChild(label)
+        }
+        whoIsOnlineButton.disabled=true
+        const closeButton=document.createElement('button')
+        closeButton.innerHTML="Close"
+        closeButton.addEventListener('click',(event)=>{
+            event.preventDefault()
+            const labels=document.getElementsByClassName("user label")
+            for(let label of labels){
+                label.remove()
+            }
+            closeButton.remove()
+            whoIsOnlineButton.disabled=false
+        })
+    })
+})
 logoutButton.addEventListener('click', async (event)=>{
     event.preventDefault()
     await fetch(logoutURL,{
@@ -86,6 +107,7 @@ socket.on('send to room',({roomname})=>{
     tokenInput.type="text"
     tokenInput.name="token"
     tokenInput.value=userToken
+    tokenInput.visibility=false
     const roomValue=document.createElement('input')
     roomValue.type="text"
     roomValue.name="room"

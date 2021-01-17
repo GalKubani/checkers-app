@@ -20,6 +20,10 @@ io.on('connection',(socket)=>{
         const users=getUsersPlaying()
         callback(users)
     })
+    socket.on('Get lobby users',({},cb)=>{
+        const userList= getUsersInRoom('lobby')
+        cb(userList)
+    })
     socket.on('Create room',({currentUser,roomname},cb)=>{
         if(io.sockets.adapter.rooms.has(roomname)){
             cb(false)
@@ -95,6 +99,7 @@ io.on('connection',(socket)=>{
         cb(updatedBoard)
     })
     socket.on('Player victory',({username,room})=>{
+        // here will nn to update the players back to users list and lobby
         io.to(room).emit('Player victory',{winner:username})
     })
     socket.on('disconnect',({})=>{
