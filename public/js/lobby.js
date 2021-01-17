@@ -19,6 +19,7 @@ whoIsOnlineButton.addEventListener('click',(event)=>{
         for(let user of userList){
             const label=document.createElement('label')
             label.classList.add("userlabel")
+            label.id="removelabel"
             label.innerHTML= user.username+" with a rating of "+user.ratings+"</br>"
             userListContainer.appendChild(label)
         }
@@ -32,6 +33,7 @@ whoIsOnlineButton.addEventListener('click',(event)=>{
             for(let label of labels){
                 label.remove()
             }
+            document.getElementById("removelabel").remove()
             closeButton.remove()
             whoIsOnlineButton.disabled=false
         })
