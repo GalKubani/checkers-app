@@ -6,4 +6,6 @@ My checkers game, here are the rules:
 4. Queens can move and eat in any direction, movement is the same as a pawn just for any direction
 5. After a player eats, he may choose to skip his turn without eating again if he has the option
 
+The game includes a dynamic rating system, each user gets 3 ratings for a win, 1 for a loss, and in case the users have a high rating difference, the lower rating user will gain double the ratings, and the other using will gain only half.
+Enjoy!
 
