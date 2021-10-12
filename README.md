@@ -9,3 +9,4 @@ My checkers game, here are the rules:
 The game includes a dynamic rating system, each user gets 3 ratings for a win, 1 for a loss, and in case the users have a high rating difference, the lower rating user will gain double the ratings, and the other using will gain only half.
 Enjoy!
 
+The game uses socketIO to manage the user lobby, as well as the game movements themselves, sending each user an updated version of the board from the user who made a move.
